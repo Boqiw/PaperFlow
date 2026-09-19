@@ -1,0 +1,23 @@
+# 密钥：绝对不要提交
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# 状态目录（PAPERFLOW_STATE_DIR）：你的私人数据，不进仓库。
+#   config.json    = 你的本地 vault 路径、起始日、每周篇数
+#   进度.csv       = 历史账本
+#   周报/ 月报/     = 产出，里面会引用你自己笔记的内容
+# 这些内容只适合你一个人看，所以整个目录都排除在外。
+# 想了解文件长什么样，看 paperflow_state.example/；跑一次 init 就会生成真的那份。
+paperflow_state/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
