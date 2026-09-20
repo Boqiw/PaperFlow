@@ -53,7 +53,42 @@ def test_week_dir_uses_folder_name(cfg):
 def test_report_path_is_sortable(cfg):
     path = cfg.report_path(1)
     assert path.name == "2026-09-21_第1周.md"
-    assert path.parent.name == "周报"
+    assert path.parent.name == "周报月报"
+    # 报告写在库里（Obsidian 能直接点开），不在 state dir。
+    assert path.parent.parent == cfg.vault
+    assert cfg.month_report_dir == cfg.report_path(1).parent
+    assert cfg.week_note_path == cfg.vault / "本周.md"
+
+
+def test_reports_and_the_week_note_live_in_the_vault_root(cfg):
+    """报告和 ``本周.md`` 是给人看的，必须落在库里；机器用的才放 state dir。"""
+    assert cfg.reports_dir == cfg.vault / "周报月报"
+    assert cfg.week_report_dir == cfg.reports_dir
+    assert cfg.month_report_dir == cfg.reports_dir
+    assert cfg.week_note_path == cfg.vault / "本周.md"
+    assert cfg.ledger_path.parent == cfg.state_dir
+    assert cfg.reports_dir.parent == cfg.vault
+
+
+def test_reports_in_the_vault_are_not_read_back_as_notes_or_goals(cfg):
+    """报告、``本周.md`` 都是脚本自己写的，绝不能被当成这周的笔记或长期目标喂回去。
+
+    搬到库里之后它们离笔记住得很近，这个边界得用测试守着：
+    一旦被当成「笔记」读回去，AI 就会把自己上周写的话当成你的想法。
+    """
+    cfg.reports_dir.mkdir(parents=True)
+    (cfg.reports_dir / "2026-09-21_第1周.md").write_text("# 周报\n\n正文\n", encoding="utf-8")
+    (cfg.reports_dir / "2026-09.md").write_text("# 月度总结\n", encoding="utf-8")
+    cfg.week_note_path.write_text("# 本周\n\n我自己写的卡点\n", encoding="utf-8")
+
+    folder = cfg.ensure_week_dir(1)
+    (folder / "我的笔记.md").write_text("真笔记", encoding="utf-8")
+
+    assert [path.name for path in cfg.notes_in(1)] == ["我的笔记.md"]
+    goals = cfg.read_goals()
+    assert "周报" not in goals
+    assert "月度总结" not in goals
+    assert "卡点" not in goals
 
 
 def test_notes_weeks_full_vs_since_last_run(cfg):

@@ -14,15 +14,20 @@
     ├── 2026-09-21_09-27\\             <- 第 1 周，装这一周的笔记
     │   ├── 阅读清单.md                <- 脚本写
     │   └── （你的笔记.md，随便放）
-    └── PaperFlow\\                    <- state dir
+    ├── 周报月报\\                     <- 脚本写；Obsidian 里直接点开看
+    │   ├── 2026-09-21_第1周.md        <- 每周的周报
+    │   ├── 2026-09-21_第1周总结.md    <- ``summary --period week``
+    │   └── 2026-09.md                 <- ``summary --period month``
+    ├── 本周.md                        <- 可选，一句话说你现在卡在哪
+    └── PaperFlow\\                    <- state dir，只放机器用的东西
         ├── config.json
-        ├── 进度.csv                   <- 内部账本，只用来去重
-        ├── 本周.md                    <- 可选，一句话说你现在卡在哪
-        ├── 周报\\2026-09-21_第1周.md
-        └── 月报\\2026-09.md
+        └── 进度.csv                   <- 内部账本，只用来去重
 
 周文件夹名以**完整日期**开头（``2026-09-21_09-27``），所以按文件名排序
 永远等于按时间排序——跨年也不会乱。
+
+周报和月报都写在 ``vault/周报月报/`` 下（不是 state dir）——它们是你读的产物，
+放进库里 Obsidian 才看得到；``阅读清单.md`` 里的链接也才点得开。
 """
 
 from __future__ import annotations
@@ -37,8 +42,9 @@ from .ranking import CITATION_BASE
 
 CONFIG_JSON = "config.json"
 LEDGER_CSV = "进度.csv"
-WEEK_REPORT_DIR = "周报"
-MONTH_REPORT_DIR = "月报"
+#: 库根下的这个文件夹装所有报告（周报 + 周总结 + 月报），放在库里是为了
+#: 你在 Obsidian 里能直接点开，而不是藏进 state dir。
+REPORTS_DIR = "周报月报"
 WEEK_NOTE = "本周.md"
 QUEUE_NOTE = "阅读清单.md"
 
@@ -168,15 +174,18 @@ class VaultConfig:
     # ------------------------------------------------------------------ 路径
     @property
     def reports_dir(self) -> Path:
-        return self.week_report_dir
+        """库根下的 ``周报月报/``——周报、周总结、月报全在这里。"""
+        return self.vault / REPORTS_DIR
 
+    #: ``week_report_dir`` / ``month_report_dir`` 是历史名字，现在与
+    #: :attr:`reports_dir` 是同一个目录（周报月报在库里，不再分家）。
     @property
     def week_report_dir(self) -> Path:
-        return self._state / WEEK_REPORT_DIR
+        return self.reports_dir
 
     @property
     def month_report_dir(self) -> Path:
-        return self._state / MONTH_REPORT_DIR
+        return self.reports_dir
 
     @property
     def ledger_path(self) -> Path:
@@ -184,7 +193,8 @@ class VaultConfig:
 
     @property
     def week_note_path(self) -> Path:
-        return self._state / WEEK_NOTE
+        """可选的 ``本周.md``，放在库根——你随手记两句话，脚本每次都会读。"""
+        return self.vault / WEEK_NOTE
 
     def report_path(self, week: int) -> Path:
         start, _ = self.week_bounds(week)

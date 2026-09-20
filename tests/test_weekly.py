@@ -77,7 +77,7 @@ def review_of(papers, mode=weekly.MODE_LLM, **extra):
 
 def test_build_context_reads_goals_and_note(cfg):
     write_week_note(cfg, 1, "卡点.md", "metastability 估计不出来")
-    (cfg.state_dir / "本周.md").write_text("# 本周\n\n我想先搞清 HMM\n", encoding="utf-8")
+    cfg.week_note_path.write_text("# 本周\n\n我想先搞清 HMM\n", encoding="utf-8")
 
     context = weekly.build_context(cfg, 1, WEEK1)
     assert "metastability" in context.goals
@@ -394,10 +394,25 @@ def test_run_week_writes_the_queue_report_and_ledger(cfg, paper, monkeypatch, ll
 
     assert outcome.queue_path and outcome.queue_path.exists()
     assert outcome.report_path and outcome.report_path.name == "2026-09-21_第1周.md"
-    assert outcome.report_path.parent.name == "周报"
+    assert outcome.report_path.parent.name == "周报月报"
+    assert outcome.report_path.parent.parent == cfg.vault
     assert cfg.week_dir(1).name == "2026-09-21_09-27"
     assert len(ledger.read_ledger(cfg.ledger_path)) == len(outcome.papers)
     assert outcome.zotero["ok"] is True
+
+
+def test_the_queue_link_to_the_report_really_resolves(cfg, paper, monkeypatch, llm):
+    """清单在 ``<库>/<周文件夹>/``，报告在 ``<库>/周报月报/``，所以链接必须以 ``../`` 开头。
+
+    以前报告藏在 state dir 里，这个链接是死的；搬到库里之后它必须真能点开，
+    否则用户在 Obsidian 里看到的就是一个点不动的灰色文字。
+    """
+    patch_search(monkeypatch, candidates(paper))
+    outcome = weekly.run_week(cfg, client=llm, zotero_on=False, today=WEEK1)
+
+    relative = f"../周报月报/{outcome.report_path.name}"
+    assert relative in outcome.queue_path.read_text(encoding="utf-8")
+    assert (outcome.queue_path.parent / relative).resolve() == outcome.report_path.resolve()
 
 
 def test_run_week_records_the_run_date(cfg, paper, monkeypatch, llm):

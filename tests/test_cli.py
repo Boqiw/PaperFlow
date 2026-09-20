@@ -32,9 +32,10 @@ def test_init_creates_the_whole_layout(vault, state_dir, capsys):
 
     assert (state_dir / "config.json").exists()
     assert (state_dir / "进度.csv").read_text(encoding="utf-8").startswith("week,")
-    assert (state_dir / "周报").is_dir()
-    assert (state_dir / "月报").is_dir()
-    assert (state_dir / "本周.md").exists()
+    assert (vault / "周报月报").is_dir()  # 报告在库里，Obsidian 能直接打开
+    assert not (state_dir / "周报").exists()  # state dir 里不再有报告
+    assert not (state_dir / "月报").exists()
+    assert (vault / "本周.md").exists()
     assert (vault / "2026-09-21_09-27").is_dir()  # 第 1 周的文件夹
     assert (vault / "长期目标" / "长期目标.md").exists()
 
@@ -55,7 +56,7 @@ def test_init_writes_a_readable_config(vault, state_dir):
 
 def test_init_is_idempotent_and_never_clobbers_your_files(vault, state_dir):
     run(init_argv(vault, state_dir))
-    note = state_dir / "本周.md"
+    note = vault / "本周.md"
     note.write_text("# 本周\n\n我自己写的，别动它\n", encoding="utf-8")
 
     config = state_dir / "config.json"
@@ -165,7 +166,7 @@ def test_week_dry_run_writes_nothing(vault, state_dir, paper, monkeypatch, capsy
     out = capsys.readouterr().out
     assert "第1周" in out
     assert "试跑" in out
-    assert not (state_dir / "周报").exists() or not list((state_dir / "周报").iterdir())
+    assert not (vault / "周报月报").exists() or not list((vault / "周报月报").iterdir())
     assert not (state_dir / "进度.csv").exists() or not ledger.read_ledger(state_dir / "进度.csv")
     assert not (vault / "2026-09-21_09-27" / "阅读清单.md").exists()
 
@@ -183,7 +184,7 @@ def test_week_end_to_end(vault, state_dir, paper, monkeypatch, capsys):
 
     assert run(["week", "--no-zotero", "--state-dir", str(state_dir), "--date", "2026-09-24"]) == 0
 
-    assert (state_dir / "周报" / "2026-09-21_第1周.md").exists()
+    assert (vault / "周报月报" / "2026-09-21_第1周.md").exists()
     assert (vault / "2026-09-21_09-27" / "阅读清单.md").exists()
     assert len(ledger.read_ledger(state_dir / "进度.csv")) == 4
 
@@ -205,7 +206,7 @@ def test_week_without_a_model_exits_1_and_writes_nothing(vault, state_dir, paper
 
     err = capsys.readouterr().err
     assert "没有可用的 AI" in err
-    assert not (state_dir / "周报").exists() or not list((state_dir / "周报").iterdir())
+    assert not (vault / "周报月报").exists() or not list((vault / "周报月报").iterdir())
     assert not (state_dir / "进度.csv").exists() or not ledger.read_ledger(state_dir / "进度.csv")
     assert not (vault / "2026-09-21_09-27" / "阅读清单.md").exists()
 
@@ -312,7 +313,7 @@ def test_summary_dry_run_prints_and_writes_nothing(vault, state_dir, capsys):
 def test_summary_writes_a_month_report(vault, state_dir, capsys):
     run(init_argv(vault, state_dir))
     assert run(["summary", "--period", "month", "--date", "2026-10-15", "--state-dir", str(state_dir)]) == 0
-    path = state_dir / "月报" / "2026-10.md"
+    path = vault / "周报月报" / "2026-10.md"
     assert path.exists()
     assert "2026-10.md" in capsys.readouterr().out
 

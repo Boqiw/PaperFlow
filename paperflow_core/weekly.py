@@ -5,7 +5,7 @@
 1. 读你的长期目标 + 自上次运行以来的**全部**笔记 + 全部历史周报的摘要行；
 2. 从这些内容里挑出本周该检索的几个方向（:mod:`paperflow_core.terms`）；
 3. 检索 → 剔除引用量不够的、年份太旧的 → 让 AI 从剩下的候选里挑满本周配额并说明理由；
-4. **先落盘**：账本 → 当周文件夹里的 ``阅读清单.md`` → ``PaperFlow/周报/`` 里的周报 → ``config.json`` 的运行日期；
+4. **先落盘**：账本 → 当周文件夹里的 ``阅读清单.md`` → 库里的 ``周报月报/`` 的周报 → ``config.json`` 的运行日期；
 5. **最后**才推进 Zotero，只打一个 ``第n周`` 标签。
 
 七条不可动摇的规矩
@@ -53,7 +53,7 @@ from .ranking import (
 )
 from .search import build_candidates
 from .texts import pick
-from .vault import DEFAULT_PER_WEEK, QUEUE_NOTE, VaultConfig, mark_run, week_label
+from .vault import DEFAULT_PER_WEEK, QUEUE_NOTE, REPORTS_DIR, VaultConfig, mark_run, week_label
 
 ROLE_DEEP = "deep"
 ROLE_SKIM = "skim"
@@ -636,7 +636,7 @@ def render_queue(
         lines.append("")
         lines.extend(f"- {item}" for item in review["open_questions"])
         lines.append("")
-    lines.append(f"> 本周工程建议见 `周报/{_report_name(context)}`。")
+    lines.append(f"> 本周工程建议见 [`{_report_name(context)}`](../{REPORTS_DIR}/{_report_name(context)})。")
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -950,7 +950,7 @@ def run_week(
     }
     report_text, block = render_report(context, papers, review, extras, lang, citation_base=base)
     outcome.report_block = block
-    cfg.week_report_dir.mkdir(parents=True, exist_ok=True)
+    cfg.reports_dir.mkdir(parents=True, exist_ok=True)
     outcome.report_path = cfg.report_path(week)
     if not papers and outcome.report_path.exists():
         # 这一周已经有周报了，而这次没产出清单（检索挂了 / 候选全推过 / 全被引用门槛刷掉）。

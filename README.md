@@ -77,9 +77,9 @@ LLM_MODEL=gpt-4o-mini
 
 它会做四件事，**不覆盖任何已有文件**：
 
-1. 在状态目录写 `config.json`
-2. 建 `周报\`、`月报\` 和空的账本 `进度.csv`
-3. 建本周的文件夹（`2026-09-21_09-27\`），并在状态目录放一个 `本周.md` 模板
+1. 在**库里**建 `周报月报\`，并建空的账本 `进度.csv`
+2. 建本周的文件夹（`2026-09-21_09-27\`）
+3. 在**库根**放一个 `本周.md` 模板（脚本每次都会读它）
 4. 如果 `<vault>\长期目标\` 还不存在，建一个 `长期目标.md` 模板
 
 参数：
@@ -98,7 +98,7 @@ LLM_MODEL=gpt-4o-mini
 
 写好它的标准：**六个月后你希望自己能讲清什么、能做什么**。每条一行，越具体越好。比如
 
-```
+```text
 能说清 metastability 和 criticality 的区别，并知道怎么从 EEG 里估计它们。
 能自己搭一条「静息态 EEG → 状态序列 → 转移概率」的分析流程。
 ```
@@ -193,7 +193,7 @@ flowchart LR
 
 清单末尾还有三小节：长期目标里**还没被碰过的那一条**、这一周的**收敛判断**（为什么这样选不算散）、**还悬着的问题**。
 
-### 周报：`<state_dir>\周报\<起始日>_第N周.md`
+### 周报：`<vault>\周报月报\<起始日>_第N周.md`
 
 分 7 节：
 
@@ -207,11 +207,14 @@ flowchart LR
 
 第 7 节就是「工程部分」的全部：**建议**，不是代码。
 
-### 总结：`<state_dir>\周报\...总结.md` 或 `<state_dir>\月报\2026-09.md`
+### 总结：`<vault>\周报月报\...总结.md` 或 `<vault>\周报月报\2026-09.md`
 
 `summary` 生成。先是一段脚本算出来的数字（权威，不会被 AI 写错），然后是 AI 的叙述：
 一句话、实际做了什么、现在能讲清什么、没做到的、有没有跑偏、下一个周期的唯一重点。
 最后留了一节 `代码 / 复现产物` 给你自己填——脚本不碰 git，也不会替你写。
+
+> 周报、周总结、月报都在**同一个文件夹**——库里的 `周报月报\`——所以你在 Obsidian
+> 里点开一次就能按时间往下翻；`阅读清单.md` 末尾那句「本周工程建议见 …」是个真链接，点得开。
 
 ### Zotero
 
@@ -227,28 +230,33 @@ flowchart LR
 
 ## 6. 数据写在哪
 
-```
+```text
 <vault>\                                    <- 你的 Obsidian 库
 ├── 长期目标\长期目标.md                     <- 你自己写，脚本只读
 ├── 2026-09-21_09-27\                       <- 第 1 周
 │   ├── 阅读清单.md                         <- 脚本写
 │   └── 你的笔记.md                         <- 你写，脚本读
-└── <state_dir>\                            <- 默认 <仓库>\paperflow_state，可搬到 vault 里
+├── 周报月报\                               <- 脚本写；Obsidian 里直接点开
+│   ├── 2026-09-21_第1周.md
+│   ├── 2026-09-21_第1周总结.md
+│   └── 2026-09.md
+├── 本周.md                                 <- 选填，一两句话：你现在卡在哪
+└── <state_dir>\                            <- 默认 <仓库>\paperflow_state
     ├── config.json                         <- init 生成
-    ├── 进度.csv                            <- 账本，只用来去重
-    ├── 本周.md                             <- 选填，一两句话：你现在卡在哪
-    ├── 周报\2026-09-21_第1周.md
-    ├── 周报\2026-09-21_第1周总结.md
-    └── 月报\2026-09.md
+    └── 进度.csv                            <- 账本，只用来去重
 ```
 
 周文件夹名以完整日期开头（`2026-09-21_09-27`），所以按文件名排序永远等于按时间排序，跨年也不会乱。
 
-脚本**只往这些位置写**：`阅读清单.md`、`周报\`、`月报\`、`进度.csv`、`config.json`。
+脚本**只往这些位置写**：`阅读清单.md`、`周报月报\`、`本周.md`、`进度.csv`、`config.json`。
 你的笔记和长期目标它一个字都不改。
 
-> **状态目录不进仓库。** 它在 `.gitignore` 里：`config.json` 记着你的本地路径，`周报\`、`月报\`
-> 会引用你自己笔记的内容，这些都是给你一个人看的。想看文件长什么样，
+> **报告写在库里，不在状态目录。** 周报月报是你读的东西，藏进状态目录 Obsidian 就看不见了，
+> `阅读清单.md` 里的链接也点不开。所以状态目录里只剩下机器用的两样：
+> `config.json` 和 `进度.csv`——换 `--state-dir` 不会把报告和 `本周.md` 一起搬走。
+>
+> **状态目录不进仓库。** 它在 `.gitignore` 里：`config.json` 记着你的本地路径，`进度.csv`
+> 记着哪几篇已经推过，这些都是给你一个人看的。想看文件长什么样，
 > 看仓库里的 `paperflow_state.example\`；跑一次 `init` 就会生成真的那份。
 
 ---
@@ -261,7 +269,7 @@ flowchart LR
 | `LLM_BASE_URL` | 否 | 默认 `https://api.openai.com/v1` |
 | `LLM_MODEL` | 否 | 默认 `gpt-4o-mini` |
 | `PAPERFLOW_VAULT` | 否 | 填了 `init` 就不用带 `--vault` |
-| `PAPERFLOW_STATE_DIR` | 否 | 默认 `<仓库>\paperflow_state`。建议放进 vault，跟着笔记一起备份 |
+| `PAPERFLOW_STATE_DIR` | 否 | 默认 `<仓库>\paperflow_state`。只放 `config.json` 和账本 `进度.csv`，报告不在里面 |
 | `PAPERFLOW_LANG` | 否 | `zh`（默认）/ `en` |
 | `S2_API_KEY` | 否 | Semantic Scholar 匿名可用，量大再配；不配会自动回落到 OpenAlex |
 | `CONTACT_EMAIL` | 否 | 填了进 OpenAlex / NCBI 的 polite pool，限流更宽松 |
@@ -283,12 +291,12 @@ flowchart LR
 ## 8. 测试与目录结构
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q        # 308 个测试，全部离线
+.\\.venv\\Scripts\\python.exe -m pytest -q        # 312 个测试，全部离线
 ```
 
 测试是**完全隔离**的：不联网、不读你的 `.env`、不碰 `paperflow_state`。
 
-```
+```text
 paperflow.py                     命令行入口（薄壳）
 paperflow_core\
   cli.py                         init / week / summary 三个命令
@@ -307,7 +315,7 @@ paperflow_core\
   ledger.py                      进度.csv
   texts.py                       中英双语字符串
   http_client.py                 带重试与限流的 HTTP 外壳
-tests\                           308 个测试
+tests\                           312 个测试
 paperflow_state\                 你的数据（默认状态目录，不进仓库）
 paperflow_state.example\         状态目录的模版，只用于展示文件格式
 ```

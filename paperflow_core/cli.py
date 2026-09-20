@@ -148,9 +148,8 @@ def cmd_init(args: argparse.Namespace, lang: str) -> int:
     vault_mod.bind(cfg, state_dir)
     cfg.vault.mkdir(parents=True, exist_ok=True)
 
-    # 1) 周报 / 月报 / 账本
-    cfg.week_report_dir.mkdir(parents=True, exist_ok=True)
-    cfg.month_report_dir.mkdir(parents=True, exist_ok=True)
+    # 1) 周报月报（库根下，Obsidian 里看得见）/ 账本
+    cfg.reports_dir.mkdir(parents=True, exist_ok=True)
     if not cfg.ledger_path.exists():
         ledger_mod.write_ledger(cfg.ledger_path, [])
 

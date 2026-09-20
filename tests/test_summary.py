@@ -192,7 +192,8 @@ def test_run_summary_writes_a_week_file(cfg, paper):
     seed_ledger(cfg, paper, 1, "2026-09-21")
     outcome = summary.run_summary(cfg, period="week", anchor=WEEK1)
     assert outcome.path.name == "2026-09-21_第1周总结.md"
-    assert outcome.path.parent.name == "周报"
+    assert outcome.path.parent.name == "周报月报"
+    assert outcome.path.parent.parent == cfg.vault
 
 
 def test_run_summary_dry_run_writes_nothing(cfg, paper):
@@ -206,6 +207,22 @@ def test_run_summary_dry_run_writes_nothing(cfg, paper):
 def test_run_summary_never_needs_a_live_llm(cfg):
     """夹具把 key 清空了，这里必须成功而不是抛异常。"""
     assert summary.run_summary(cfg, period="month", anchor=WEEK1).text
+
+
+def test_reports_never_carry_a_pf_block(cfg, paper):
+    """只有周报带 ``PF:WEEK`` 块。总结/月报要是也带，全局历史里就会多出重复的第 n 周。"""
+    from paperflow_core.notes import read_pf_blocks
+
+    seed_ledger(cfg, paper, 1, "2026-09-21", count=2, status=ledger.STATUS_READ)
+    week_out = summary.run_summary(cfg, period="week", anchor=WEEK1)
+    month_out = summary.run_summary(cfg, period="month", anchor=WEEK1)
+
+    assert "PF:WEEK" not in week_out.text
+    assert "PF:WEEK" not in month_out.text
+    # 两份都写在库里的 周报月报/，且读不出任何块
+    assert week_out.path.parent == cfg.reports_dir
+    assert month_out.path.parent == cfg.reports_dir
+    assert read_pf_blocks(cfg.reports_dir) == []
 
 
 def test_run_summary_uses_the_llm_prose_when_available(cfg, paper):
